@@ -1,6 +1,6 @@
-CC=cc
-CFLAGS=-Wall -Wextra -std=c2x
+CC=g++
+CFLAGS=-Wall -Wextra -std=c++20
 BINARY=slc
 
-all: main.c
+all: main.cpp
 	$(CC) $(CFLAGS) $^ -o $(BINARY)
