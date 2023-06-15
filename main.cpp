@@ -1,10 +1,24 @@
 #include <iostream>
 #include <string>
 #include <array>
+#include <variant>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
 constexpr size_t ce_StackSize = 1 << 10;
+
+
+enum class PunctuationToken
+{
+    Mov, Comma, Semicolon
+};
+
+struct IntegerToken
+{
+    uint_fast64_t value;
+};
+
+using Token = std::variant<PunctuationToken, IntegerToken>;
 
 
 class Interpreter
@@ -27,7 +41,7 @@ public:
 
 using namespace std::string_literals;
 
-const std::string program = ""s;
+const std::string program = "mov 0, 69;\n"s;
 
 
 int main() {
