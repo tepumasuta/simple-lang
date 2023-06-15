@@ -16,9 +16,20 @@ enum class PunctuationToken
 struct IntegerToken
 {
     uint_fast64_t value;
+
+    constexpr explicit IntegerToken(uint_fast64_t value) : value(value) {}
 };
 
-using Token = std::variant<PunctuationToken, IntegerToken>;
+struct UnknownToken
+{
+    char symbol;
+
+    constexpr explicit UnknownToken(char symbol) : symbol(symbol) {}
+};
+
+struct EOFToken {};
+
+using Token = std::variant<PunctuationToken, IntegerToken, UnknownToken, EOFToken>;
 
 
 struct Position
