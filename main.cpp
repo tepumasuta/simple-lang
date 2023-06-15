@@ -2,6 +2,7 @@
 #include <string>
 #include <array>
 #include <variant>
+#include <ostream>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
@@ -15,21 +16,44 @@ enum class PunctuationToken
 
 struct IntegerToken
 {
+    friend std::ostream& operator<<(std::ostream& out, IntegerToken token);
     uint_fast64_t value;
 
     constexpr explicit IntegerToken(uint_fast64_t value) : value(value) {}
 };
+std::ostream& operator<<(std::ostream& out, IntegerToken token)
+{
+    return out << "IntegerToken(" << token.value << ')';
+}
 
 struct UnknownToken
 {
+    friend std::ostream& operator<<(std::ostream& out, UnknownToken token);
     char symbol;
 
     constexpr explicit UnknownToken(char symbol) : symbol(symbol) {}
 };
+std::ostream& operator<<(std::ostream& out, UnknownToken token)
+{
+    return out << "UnknownToken(`" << token.symbol << "`)";
+}
 
-struct EOFToken {};
+struct EOFToken
+{
+    friend std::ostream& operator<<(std::ostream& out, EOFToken token);
+};
+std::ostream& operator<<(std::ostream& out, EOFToken token)
+{
+    (void)token;
+    return out << "EOFToken";
+}
 
 using Token = std::variant<PunctuationToken, IntegerToken, UnknownToken, EOFToken>;
+std::ostream& operator<<(std::ostream& out, const Token& token)
+{
+    std::visit([&out](auto&& t){ out << t; }, token);
+    return out;
+}
 
 
 struct Position
