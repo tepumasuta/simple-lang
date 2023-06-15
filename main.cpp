@@ -37,24 +37,15 @@ struct Position
     uint_fast64_t line, col;
 
     constexpr Position() : line(1), col(1) {}
-    constexpr Position(uint_fast64_t column) : line(1), col(column) {}
+    constexpr explicit Position(uint_fast64_t column) : line(1), col(column) {}
     constexpr Position(uint_fast64_t line, uint_fast64_t column) : line(line), col(column) {}
 
-    constexpr Position operator+(uint_fast64_t column)
-    {
-        return Position(line, this->col + column);
-    }
     constexpr Position operator+(const Position& pos)
     {
         if (!pos.line)
             return Position(line + pos.line, pos.col + 1);
 
         return Position(line, col + pos.col);
-    }
-    constexpr Position& operator+=(uint_fast64_t column)
-    {
-        col += column;
-        return *this;
     }
     constexpr Position& operator+=(const Position& pos)
     {
