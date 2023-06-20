@@ -113,7 +113,7 @@ class Lexer
 private:
     Position m_Pos;
     uint64_t m_ReadingPos;
-    const std::string& m_ProgramText;
+    const std::string_view m_ProgramText;
 public:
     Lexer(const std::string& program) : m_Pos(), m_ReadingPos(0), m_ProgramText(program) {}
 
