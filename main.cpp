@@ -86,20 +86,49 @@ struct Position
 };
 
 
+class Lexer
+{
+private:
+    Position m_Pos;
+    uint64_t m_ReadingPos;
+    const std::string& m_ProgramText;
+public:
+    Lexer(const std::string& program) : m_Pos(), m_ReadingPos(0), m_ProgramText(program) {}
+
+    Token ParseToken()
+    {
+        if (m_ReadingPos == m_ProgramText.length())
+            return EOFToken();
+
+        if (m_ProgramText[m_ReadingPos] == '\n')
+            m_Pos += Position(1, 0);
+        else
+            m_Pos += Position(1);
+
+        return UnknownToken(m_ProgramText[m_ReadingPos++]);
+    }
+};
+
+
 class Interpreter
 {
 private:
     std::array<uint8_t, ce_HeapSize> m_Heap;
     std::array<uint8_t, ce_StackSize> m_Stack;
     const std::string m_Program;
+    Lexer m_Lexer;
 public:
-    Interpreter(const std::string& program) : m_Program(program) {}
+    Interpreter(const std::string& program) : m_Program(program), m_Lexer(program) {}
     ~Interpreter() {}
 
     void Interpret()
     {
-        std::cout << "Hello from interpreter!\n"
-                  << "The program received: \n`" << m_Program << '`' << std::endl;
+        Token tok;
+        while (std::get_if<EOFToken>(&(tok = m_Lexer.ParseToken())) == nullptr)
+        {
+            std::cout << tok << '\n';
+        }
+        std::cout << tok << std::endl;
     }
 };
 
