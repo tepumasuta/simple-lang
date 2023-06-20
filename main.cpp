@@ -117,8 +117,19 @@ private:
 public:
     Lexer(const std::string& program) : m_Pos(), m_ReadingPos(0), m_ProgramText(program) {}
 
+    void SkipWhitespace()
+    {
+        while (m_ReadingPos < m_ProgramText.length() && std::isspace(m_ProgramText[m_ReadingPos]))
+        {
+            m_Pos += m_ProgramText[m_ReadingPos] == '\n' ? Position(1, 0) : Position(1);
+            m_ReadingPos++;
+        }
+    }
+
     Token ParseToken()
     {
+        SkipWhitespace();
+
         if (m_ReadingPos == m_ProgramText.length())
             return EOFToken();
 
