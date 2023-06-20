@@ -3,6 +3,7 @@
 #include <array>
 #include <variant>
 #include <ostream>
+#include <string_view>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
@@ -13,6 +14,17 @@ enum class PunctuationToken
 {
     Mov, Comma, Semicolon
 };
+std::ostream& operator<<(std::ostream& out, PunctuationToken tok)
+{
+    out << "PunctuationToken(";
+    switch (tok)
+    {
+        case PunctuationToken::Mov: out << "mov"; break;
+        case PunctuationToken::Comma: out << ","; break;
+        case PunctuationToken::Semicolon: out << ";"; break;
+    }
+    return out << ')';
+}
 
 struct IntegerToken
 {
@@ -35,7 +47,17 @@ struct UnknownToken
 };
 std::ostream& operator<<(std::ostream& out, UnknownToken token)
 {
-    return out << "UnknownToken(`" << token.symbol << "`)";
+    out << "UnknownToken(`";
+    switch (token.symbol)
+    {
+    case '\n':
+        out << "\\n";
+        break;
+    default:
+        out << token.symbol;
+        break;
+    }
+    return  out << "`)";
 }
 
 struct EOFToken
