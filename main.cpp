@@ -146,7 +146,7 @@ class Lexer
 private:
     Position m_Pos;
     uint64_t m_ReadingPos;
-    const std::string_view m_ProgramText;
+    const std::string& m_ProgramText;
     std::vector<std::string_view> m_Keywords;
 public:
     Lexer(const std::string& program) : m_Pos(), m_ReadingPos(0), m_ProgramText(program)
@@ -176,7 +176,7 @@ public:
     Token ParseToken()
     {
         SkipWhitespace();
-        const auto view = std::string_view(&m_ProgramText[m_ReadingPos], m_ProgramText.end());
+        const auto view = std::string_view(&m_ProgramText[m_ReadingPos], &m_ProgramText.back());
 
         if (m_ReadingPos == m_ProgramText.length())
             return Token(m_Pos, EOFToken());
@@ -228,21 +228,12 @@ class Interpreter
 private:
     std::array<uint8_t, ce_HeapSize> m_Heap;
     std::array<uint8_t, ce_StackSize> m_Stack;
-    const std::string m_Program;
-    Lexer m_Lexer;
+    const std::string& m_Program;
 public:
-    Interpreter(const std::string& program) : m_Program(program), m_Lexer(program) {}
+    Interpreter(const std::string& program) : m_Program(program) {}
     ~Interpreter() {}
 
-    void Interpret()
-    {
-        Token tok;
-        while (std::get_if<EOFToken>(&(tok = m_Lexer.ParseToken()).value) == nullptr)
-        {
-            std::cout << tok << '\n';
-        }
-        std::cout << tok << std::endl;
-    }
+    void Interpret() {}
 };
 
 
@@ -250,9 +241,14 @@ const std::string program = "mov 0, 69;\n"s;
 
 
 int main() {
-    Interpreter interpreter(program);
+    Lexer lexer(program);
 
-    interpreter.Interpret();
+    Token tok;
+    while (std::get_if<EOFToken>(&(tok = lexer.ParseToken()).value) == nullptr)
+    {
+        std::cout << tok << '\n';
+    }
+    std::cout << tok << std::endl;
 
     return 0;
 }
