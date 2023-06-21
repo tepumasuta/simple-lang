@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <optional>
+#include <iomanip>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
@@ -236,9 +237,10 @@ std::ostream& operator<<(std::ostream& out, const Instruction& instruction)
 
 struct MovInstruction : public Instruction
 {
-    uint_fast64_t value, heapAddress;
+    uint8_t value;
+    uint_fast64_t heapAddress;
 
-    MovInstruction(uint_fast64_t value, uint_fast64_t heapAddress) : value(value), heapAddress(heapAddress) {}
+    MovInstruction(uint8_t value, uint_fast64_t heapAddress) : value(value), heapAddress(heapAddress) {}
 
     virtual std::ostream& _dump(std::ostream& out) const override
     {
@@ -369,24 +371,62 @@ class Interpreter
 private:
     std::array<uint8_t, ce_HeapSize> m_Heap;
     std::array<uint8_t, ce_StackSize> m_Stack;
-    const std::string& m_Program;
+    const AST& m_Program;
 public:
-    Interpreter(const std::string& program) : m_Program(program) {}
+    Interpreter(const AST& program) : m_Program(program) {}
     ~Interpreter() {}
 
-    void Interpret() {}
+    void Interpret()
+    {
+        Interpret(m_Program.root);
+    }
+    void DumpHeap(uint_fast64_t limit = 16)
+    {
+        if (!limit)
+            return;
+
+        std::cout << std::hex << std::setfill('0');
+        std::cout << std::hex << std::setw(2) << static_cast<int>(m_Heap[0]);
+        for (uint_fast64_t i = 1; i < limit; i++)
+            std::cout << ' ' << std::hex << std::setw(2) << static_cast<int>(m_Heap[i]);
+        std::cout << std::endl;
+    }
+    void DumpHeap(uint_fast64_t from, uint_fast64_t to)
+    {
+        if (to < from)
+            return;
+
+        std::cout << std::hex << std::setfill('0');
+        std::cout << std::hex << std::setw(2) << static_cast<int>(m_Heap[from]);
+        for (uint_fast64_t i = from + 1; i < to; i++)
+            std::cout << ' ' << std::hex << std::setw(2) << static_cast<int>(m_Heap[i]);
+        std::cout << std::endl;
+    }
+private:
+    void Interpret(Instruction* instruction)
+    {
+        if (ScopeInstruction* op = dynamic_cast<ScopeInstruction*>(instruction))
+            for (const auto nextOp: op->instructions)
+                Interpret(nextOp);
+        if (MovInstruction* op = dynamic_cast<MovInstruction*>(instruction))
+        {
+            m_Heap[op->heapAddress] = op->value;
+        }
+    }
 };
 
 
-const std::string program = "mov 0, 69;\n"s;
+const std::string program = "mov 42, 69;\n"s;
 
 
 int main() {
     Lexer lexer(program);
-    const auto& tokens = lexer.LexTokens();
+    const std::vector<Token>& tokens = lexer.LexTokens();
     Parser parser(tokens);
-
-    std::cout << parser.ParseProgram() << std::endl;
+    const AST tree = parser.ParseProgram();
+    Interpreter interpreter(tree);
+    interpreter.Interpret();
+    interpreter.DumpHeap(80);
 
     return 0;
 }
