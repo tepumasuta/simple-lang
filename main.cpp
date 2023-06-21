@@ -7,6 +7,7 @@
 #include <string_view>
 #include <algorithm>
 #include <unordered_map>
+#include <functional>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
@@ -205,6 +206,22 @@ public:
     }
 };
 
+
+struct MovInstruction
+{
+    friend std::ostream& operator<<(std::ostream& out, const MovInstruction mov);
+    uint_fast64_t value, heapAddress;
+};
+std::ostream& operator<<(std::ostream& out, const MovInstruction mov)
+{
+    return out << "Mov(value=" << mov.value << ", addr=" << mov.heapAddress << ')';
+}
+using Instruction = std::variant<MovInstruction>;
+std::ostream& operator<<(std::ostream& out, const Instruction& instruction)
+{
+    std::visit([&out](auto&& i) { out << i; }, instruction);
+    return out;
+}
 
 class Interpreter
 {
