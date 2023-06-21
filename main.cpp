@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <optional>
 #include <iomanip>
+#include <fstream>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
@@ -244,7 +245,7 @@ struct MovInstruction : public Instruction
 
     virtual std::ostream& _dump(std::ostream& out) const override
     {
-        return out << "Mov(value=" << value << ", addr=" << heapAddress << ')';
+        return out << "Mov(value=" << static_cast<uint16_t>(value) << ", addr=" << heapAddress << ')';
     }
     friend std::ostream& operator<<(std::ostream& out, const MovInstruction mov);
 };
@@ -416,15 +417,22 @@ private:
 };
 
 
-const std::string program = "mov 42, 69;\n"s;
+int main(int argc, char** argv) {
+    if (argc != 2)
+    {
+        std::cout << "Interpreter expects a filepath to be read and interpreted." << std::endl;
+        return -1;
+    }
 
+    const std::string filename(argv[1]);
+    std::ifstream file(filename);
+    std::string program((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-int main() {
     Lexer lexer(program);
     const std::vector<Token>& tokens = lexer.LexTokens();
     Parser parser(tokens);
-    const AST tree = parser.ParseProgram();
-    Interpreter interpreter(tree);
+    const AST ast = parser.ParseProgram();
+    Interpreter interpreter(ast);
     interpreter.Interpret();
     interpreter.DumpHeap(80);
 
