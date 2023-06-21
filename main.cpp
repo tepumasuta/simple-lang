@@ -83,8 +83,8 @@ std::ostream& operator<<(std::ostream& out, EOFToken token)
     return out << "EOFToken";
 }
 
-using Token = std::variant<PunctuationToken, IntegerToken, UnknownToken, EOFToken>;
-std::ostream& operator<<(std::ostream& out, const Token& token)
+using TokenValue = std::variant<PunctuationToken, IntegerToken, UnknownToken, EOFToken>;
+std::ostream& operator<<(std::ostream& out, const TokenValue& token)
 {
     std::visit([&out](auto&& t){ out << t; }, token);
     return out;
@@ -94,6 +94,8 @@ std::ostream& operator<<(std::ostream& out, const Token& token)
 struct Position
 {
     uint_fast64_t line, col;
+
+    friend std::ostream& operator<<(std::ostream& out, const Position pos);
 
     constexpr Position() : line(1), col(1) {}
     constexpr explicit Position(uint_fast64_t column) : line(1), col(column) {}
@@ -119,6 +121,23 @@ struct Position
         return *this;
     }
 };
+std::ostream& operator<<(std::ostream& out, const Position pos)
+{
+    return out << "Position(line=" << pos.line << ", col=" << pos.col << ')';
+}
+
+
+struct Token
+{
+    Position pos;
+    TokenValue value;
+
+    friend std::ostream& operator<<(std::ostream& out, const Token token);
+};
+std::ostream& operator<<(std::ostream& out, const Token token)
+{
+    return out << "Token[" << token.pos.line << ':' << token.pos.col << "](" << token.value << ')';
+}
 
 
 class Lexer
@@ -159,19 +178,22 @@ public:
         const auto view = std::string_view(&m_ProgramText[m_ReadingPos], m_ProgramText.end());
 
         if (m_ReadingPos == m_ProgramText.length())
-            return EOFToken();
+            return Token(m_Pos, EOFToken());
 
         for (const auto keyword: m_Keywords)
             if (view.starts_with(keyword))
             {
                 m_ReadingPos += keyword.length();
+                const auto token = Token(m_Pos, sc_KeywordToTokens.at(keyword));
                 m_Pos += Position(keyword.length());
-                return sc_KeywordToTokens.at(keyword);
+                return token;
             }
 
+
+        const auto token = Token(m_Pos, UnknownToken(m_ProgramText[m_ReadingPos++]));
         m_Pos += Position(1);
 
-        return UnknownToken(m_ProgramText[m_ReadingPos++]);
+        return token;
     }
 };
 
@@ -190,7 +212,7 @@ public:
     void Interpret()
     {
         Token tok;
-        while (std::get_if<EOFToken>(&(tok = m_Lexer.ParseToken())) == nullptr)
+        while (std::get_if<EOFToken>(&(tok = m_Lexer.ParseToken()).value) == nullptr)
         {
             std::cout << tok << '\n';
         }
