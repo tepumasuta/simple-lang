@@ -7,7 +7,7 @@
 #include <string_view>
 #include <algorithm>
 #include <unordered_map>
-#include <functional>
+#include <optional>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
@@ -235,6 +235,63 @@ std::ostream& operator<<(std::ostream& out, const Instruction& instruction)
     return out;
 }
 
+
+struct AST
+{
+    struct ASTNode {
+        Instruction value;
+        std::vector<ASTNode> children;
+
+        friend std::ostream& operator<<(std::ostream& out, const ASTNode& node);
+
+        explicit ASTNode(const Instruction& instruction) : value(instruction) {}
+        ASTNode(const Instruction& instruction, std::vector<ASTNode> children) : value(instruction)
+        {
+            std::copy(children.begin(), children.end(), std::back_inserter(this->children));
+        }
+        explicit ASTNode(std::vector<ASTNode> children)
+        {
+            std::copy(children.begin(), children.end(), std::back_inserter(this->children));
+        }
+
+        ASTNode& operator=(ASTNode& node)
+        {
+            value = node.value;
+            std::copy(node.children.begin(), node.children.end(), std::back_inserter(children));
+
+            return *this;
+        }
+    };
+
+    std::optional<ASTNode> root;
+
+    friend std::ostream& operator<<(std::ostream& out, const AST& tree);
+
+    AST() : root(std::nullopt) {}
+    explicit AST(const ASTNode& node) : root(node) {}
+    AST(const AST& ast) : root(ast.root) {}
+};
+std::ostream& operator<<(std::ostream& out, const AST::ASTNode& node)
+{
+    out << "ASTNode(value=" << node.value << ", children=[";
+    if (node.children.size())
+    {
+        auto start = node.children.begin();
+        out << *start++;
+        for (; start != node.children.end(); start++)
+            out << ", " << *start;
+    }
+    return out << "])";
+}
+std::ostream& operator<<(std::ostream& out, const AST& tree)
+{
+    out << "AST(";
+    if (tree.root.has_value())
+        out << tree.root.value();
+    return out << ')';
+}
+
+
 class Interpreter
 {
 private:
@@ -257,9 +314,12 @@ int main() {
 
     const auto& tokens = lexer.LexTokens();
 
-    for (const auto& token: tokens)
-        std::cout << token << '\n';
-
+    AST tree{AST::ASTNode(MovInstruction())};
+    tree.root.value().children.emplace_back(MovInstruction());
+    tree.root.value().children.emplace_back(MovInstruction());
+    tree.root.value().children[1].children.emplace_back(MovInstruction());
+    tree.root.value().children.emplace_back(MovInstruction());
+    std::cout << tree << std::endl;
 
     return 0;
 }
