@@ -12,6 +12,7 @@
 constexpr size_t ce_HeapSize = 1 << 14;
 constexpr size_t ce_StackSize = 1 << 10;
 
+using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 enum class PunctuationToken
@@ -197,8 +198,6 @@ public:
     }
 };
 
-
-using namespace std::string_literals;
 
 const std::string program = "mov 0, 69;\n"s;
 
