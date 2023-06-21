@@ -173,7 +173,7 @@ public:
         }
     }
 
-    Token ParseToken()
+    Token LexToken()
     {
         SkipWhitespace();
         const auto view = std::string_view(&m_ProgramText[m_ReadingPos], &m_ProgramText.back());
@@ -244,7 +244,7 @@ int main() {
     Lexer lexer(program);
 
     Token tok;
-    while (std::get_if<EOFToken>(&(tok = lexer.ParseToken()).value) == nullptr)
+    while (std::get_if<EOFToken>(&(tok = lexer.LexToken()).value) == nullptr)
     {
         std::cout << tok << '\n';
     }
