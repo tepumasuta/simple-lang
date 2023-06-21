@@ -1,18 +1,30 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include <array>
 #include <variant>
 #include <ostream>
 #include <string_view>
+#include <algorithm>
+#include <unordered_map>
 
 
 constexpr size_t ce_HeapSize = 1 << 14;
 constexpr size_t ce_StackSize = 1 << 10;
 
+using namespace std::string_view_literals;
 
 enum class PunctuationToken
 {
     Mov, Comma, Semicolon
+};
+static constexpr std::array sce_Keywords = {
+    "mov"sv, ","sv, ";"sv
+};
+static const std::unordered_map<std::string_view, PunctuationToken> sc_KeywordToTokens = {
+    {"mov"sv, PunctuationToken::Mov},
+    {","sv, PunctuationToken::Comma},
+    {";"sv, PunctuationToken::Semicolon},
 };
 std::ostream& operator<<(std::ostream& out, PunctuationToken tok)
 {
@@ -114,8 +126,22 @@ private:
     Position m_Pos;
     uint64_t m_ReadingPos;
     const std::string_view m_ProgramText;
+    std::vector<std::string_view> m_Keywords;
 public:
-    Lexer(const std::string& program) : m_Pos(), m_ReadingPos(0), m_ProgramText(program) {}
+    Lexer(const std::string& program) : m_Pos(), m_ReadingPos(0), m_ProgramText(program)
+    {
+        m_Keywords.reserve(sce_Keywords.size());
+        std::copy(sce_Keywords.begin(), sce_Keywords.end(), std::back_inserter(m_Keywords));
+        std::sort(
+            m_Keywords.begin(),
+            m_Keywords.end(),
+            [](const std::string_view& s1, const std::string_view& s2) {
+                return s1.length() != s2.length()
+                     ? s1.length() > s2.length()
+                     : s1.compare(s2);
+            }
+        );
+    }
 
     void SkipWhitespace()
     {
@@ -129,14 +155,20 @@ public:
     Token ParseToken()
     {
         SkipWhitespace();
+        const auto view = std::string_view(&m_ProgramText[m_ReadingPos], m_ProgramText.end());
 
         if (m_ReadingPos == m_ProgramText.length())
             return EOFToken();
 
-        if (m_ProgramText[m_ReadingPos] == '\n')
-            m_Pos += Position(1, 0);
-        else
-            m_Pos += Position(1);
+        for (const auto keyword: m_Keywords)
+            if (view.starts_with(keyword))
+            {
+                m_ReadingPos += keyword.length();
+                m_Pos += Position(keyword.length());
+                return sc_KeywordToTokens.at(keyword);
+            }
+
+        m_Pos += Position(1);
 
         return UnknownToken(m_ProgramText[m_ReadingPos++]);
     }
