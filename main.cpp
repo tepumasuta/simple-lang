@@ -98,7 +98,7 @@ struct Position
     friend std::ostream& operator<<(std::ostream& out, const Position pos);
 
     constexpr Position() : line(1), col(1) {}
-    constexpr explicit Position(uint_fast64_t column) : line(1), col(column) {}
+    constexpr explicit Position(uint_fast64_t column) : line(0), col(column) {}
     constexpr Position(uint_fast64_t line, uint_fast64_t column) : line(line), col(column) {}
 
     constexpr Position operator+(const Position& pos)
