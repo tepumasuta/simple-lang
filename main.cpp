@@ -42,7 +42,7 @@ std::ostream& operator<<(std::ostream& out, PunctuationToken tok)
 struct IntegerToken
 {
     friend std::ostream& operator<<(std::ostream& out, IntegerToken token);
-    uint_fast64_t value;
+    int_fast64_t value;
 
     constexpr explicit IntegerToken(uint_fast64_t value) : value(value) {}
 };
@@ -189,6 +189,14 @@ public:
                 return token;
             }
 
+        if (std::isdigit(m_ProgramText[m_ReadingPos]) || (m_ProgramText[m_ReadingPos] == '-' && m_ProgramText.length() - m_ReadingPos >= 2 && std::isdigit(m_ProgramText[m_ReadingPos + 1])))
+        {
+            uint_fast32_t begin = m_ReadingPos;
+            while (std::isdigit(m_ProgramText[++m_ReadingPos]));
+            const auto token = Token(m_Pos, IntegerToken(std::stol(&m_ProgramText[begin])));
+            m_Pos += Position(m_ReadingPos - begin);
+            return token;
+        }
 
         const auto token = Token(m_Pos, UnknownToken(m_ProgramText[m_ReadingPos++]));
         m_Pos += Position(1);
