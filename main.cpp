@@ -43,7 +43,7 @@ std::ostream& operator<<(std::ostream& out, PunctuationToken tok)
 struct IntegerToken
 {
     friend std::ostream& operator<<(std::ostream& out, IntegerToken token);
-    int_fast64_t value;
+    uint_fast64_t value;
 
     constexpr explicit IntegerToken(uint_fast64_t value) : value(value) {}
 };
@@ -238,6 +238,8 @@ struct MovInstruction : public Instruction
 {
     uint_fast64_t value, heapAddress;
 
+    MovInstruction(uint_fast64_t value, uint_fast64_t heapAddress) : value(value), heapAddress(heapAddress) {}
+
     virtual std::ostream& _dump(std::ostream& out) const override
     {
         return out << "Mov(value=" << value << ", addr=" << heapAddress << ')';
@@ -301,6 +303,67 @@ std::ostream& operator<<(std::ostream& out, const AST& tree)
 }
 
 
+class Parser
+{
+private:
+    const std::vector<Token>& m_Program;
+    uint_fast64_t m_ReadingPos;
+
+public:
+    Parser(const std::vector<Token>& tokens) : m_Program(tokens), m_ReadingPos(0) {}
+
+    Instruction* ParseInstruction()
+    {
+        if (LeftAtLeast(5)
+            && FollowingTokenOfType<PunctuationToken>(0) && FollowingTokenIs<PunctuationToken>(0, PunctuationToken::Mov)
+            && FollowingTokenOfType<IntegerToken>(1)
+            && FollowingTokenOfType<PunctuationToken>(2) && FollowingTokenIs<PunctuationToken>(2, PunctuationToken::Comma)
+            && FollowingTokenOfType<IntegerToken>(3)
+            && FollowingTokenOfType<PunctuationToken>(4) && FollowingTokenIs<PunctuationToken>(4, PunctuationToken::Semicolon))
+        {
+            const auto node = new MovInstruction(
+                std::get<IntegerToken>(m_Program[m_ReadingPos + 1].value).value,
+                std::get<IntegerToken>(m_Program[m_ReadingPos + 3].value).value
+            );
+            m_ReadingPos += 5;
+            return node;
+        }
+
+        throw std::exception();
+    };
+
+    AST ParseProgram()
+    {
+        AST tree;
+
+        while (m_ReadingPos < m_Program.size() && !FollowingTokenOfType<EOFToken>(0))
+        {
+            const auto& node = ParseInstruction();
+            if (dynamic_cast<ScopeInstruction*>(node) == nullptr)
+                dynamic_cast<ScopeInstruction*>(tree.root)->instructions.push_back(node);
+        }
+
+        return tree;
+    }
+
+private:
+    bool LeftAtLeast(uint_fast64_t length) const
+    {
+        return m_Program.size() - m_ReadingPos >= length;
+    }
+    template<typename T>
+    bool FollowingTokenOfType(uint_fast64_t index) const
+    {
+        return std::holds_alternative<T>(m_Program.at(m_ReadingPos + index).value);
+    }
+    template<typename T>
+    bool FollowingTokenIs(uint_fast64_t index, const T value) const
+    {
+        return std::get<T>(m_Program.at(m_ReadingPos + index).value) == value;
+    }
+};
+
+
 class Interpreter
 {
 private:
@@ -321,6 +384,9 @@ const std::string program = "mov 0, 69;\n"s;
 int main() {
     Lexer lexer(program);
     const auto& tokens = lexer.LexTokens();
+    Parser parser(tokens);
+
+    std::cout << parser.ParseProgram() << std::endl;
 
     return 0;
 }
