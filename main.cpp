@@ -331,7 +331,7 @@ public:
             return node;
         }
 
-        throw std::exception();
+        throw std::runtime_error("Failed to parse program");
     };
 
     AST ParseProgram()
