@@ -204,6 +204,18 @@ public:
 
         return token;
     }
+
+    std::vector<Token> LexTokens()
+    {
+        std::vector<Token> tokens;
+        Token tok;
+        while (std::get_if<EOFToken>(&(tok = LexToken()).value) == nullptr)
+        {
+            tokens.emplace_back(tok);
+        }
+        tokens.emplace_back(tok);
+        return tokens;
+    }
 };
 
 
@@ -243,12 +255,11 @@ const std::string program = "mov 0, 69;\n"s;
 int main() {
     Lexer lexer(program);
 
-    Token tok;
-    while (std::get_if<EOFToken>(&(tok = lexer.LexToken()).value) == nullptr)
-    {
-        std::cout << tok << '\n';
-    }
-    std::cout << tok << std::endl;
+    const auto& tokens = lexer.LexTokens();
+
+    for (const auto& token: tokens)
+        std::cout << token << '\n';
+
 
     return 0;
 }
